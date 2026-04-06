@@ -250,55 +250,76 @@
         </nav>
         <p class="copyright">&copy; 2026 KeepIt</p>
     </footer>
-
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        const form = document.getElementById("reset-form");
-        const newPasswordInput = document.getElementById("new-password");
-        const confirmPasswordInput = document.getElementById("confirm-password");
-        const message = document.getElementById("form-message");
+    const SUPABASE_URL = 'https://houranifbvtauvmuzuyp.supabase.co;
+    const SUPABASE_ANON_KEY = 'sb_publishable_phnLqmraWaWyi47QQbSk7Q_FTW0EA3F';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Toggle Password visibility
-        document.querySelectorAll('.toggle-password').forEach(button => {
-            button.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-target');
-                const input = document.getElementById(targetId);
-                const isPassword = input.getAttribute('type') === 'password';
+    const form = document.getElementById("reset-form");
+    const newPasswordInput = document.getElementById("new-password");
+    const confirmPasswordInput = document.getElementById("confirm-password");
+    const message = document.getElementById("form-message");
 
-                input.setAttribute('type', isPassword ? 'text' : 'password');
-                this.setAttribute('aria-label', isPassword ? 'Passwort verbergen' : 'Passwort anzeigen');
+    // Toggle Password visibility (bleibt gleich wie vorher)
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const isPassword = input.getAttribute('type') === 'password';
 
-                // Toggle SVG (Eye to Eye-off)
-                if (isPassword) {
-                    this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
-                } else {
-                    this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-                }
-            });
+            input.setAttribute('type', isPassword ? 'text' : 'password');
+            this.setAttribute('aria-label', isPassword ? 'Passwort verbergen' : 'Passwort anzeigen');
+
+            if (isPassword) {
+                this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+            } else {
+                this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+            }
+        });
+    });
+
+    // 2. Formular-Absenden anpassen (muss "async" sein)
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const newPassword = newPasswordInput.value.trim();
+        const confirmPassword = confirmPasswordInput.value.trim();
+
+        if (!newPassword || !confirmPassword) {
+            message.className = "message";
+            message.textContent = "Bitte beide Felder ausfüllen.";
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            message.className = "message";
+            message.textContent = "Die Passwörter stimmen nicht überein.";
+            return;
+        }
+
+        // Lade-Nachricht anzeigen
+        message.className = "message";
+        message.textContent = "Passwort wird gespeichert...";
+
+        // 3. API-Call an Supabase senden
+        const { data, error } = await supabaseClient.auth.updateUser({
+            password: newPassword
         });
 
-        form.addEventListener("submit", function (event) {
-            event.preventDefault();
-
-            const newPassword = newPasswordInput.value.trim();
-            const confirmPassword = confirmPasswordInput.value.trim();
-
-            if (!newPassword || !confirmPassword) {
-                message.className = "message";
-                message.textContent = "Bitte beide Felder ausfuellen.";
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                message.className = "message";
-                message.textContent = "Die Passwoerter stimmen nicht ueberein.";
-                return;
-            }
-
+        // 4. Antwort von Supabase auswerten
+        if (error) {
+            message.className = "message";
+            message.textContent = "Fehler beim Speichern: " + error.message;
+        } else {
             message.className = "message success";
-            message.textContent = "Passwort wurde erfolgreich gespeichert.";
+            message.textContent = "Passwort wurde erfolgreich gespeichert! Du kannst dich nun in der App anmelden.";
             form.reset();
-        });
-    </script>
+        }
+    });
+</script>
 </body>
 </html>
 
