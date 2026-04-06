@@ -254,7 +254,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     const SUPABASE_URL = 'https://houranifbvtauvmuzuyp.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_phnLqmraWaWyi47QQbSk7Q_FTW0EA3F'; // Hinweis: Anon Keys sind öffentlich, das ist okay.
+    const SUPABASE_ANON_KEY = 'sb_publishable_phnLqmraWaWyi47QQbSk7Q_FTW0EA3F';
     
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -264,43 +264,39 @@
     const message = document.getElementById("form-message");
     const submitBtn = form.querySelector('.button');
 
-    // --- NEU: Token beim Laden der Seite überprüfen ---
+    // --- Token beim Laden still im Hintergrund überprüfen ---
     window.addEventListener('DOMContentLoaded', async () => {
-        // 1. Parameter aus der URL auslesen (z.B. ?token_hash=abc&type=recovery)
         const urlParams = new URLSearchParams(window.location.search);
         const tokenHash = urlParams.get('token_hash');
         const type = urlParams.get('type');
 
         if (tokenHash && type === 'recovery') {
-            message.className = "message";
-            message.textContent = "Link wird verifiziert...";
-            submitBtn.disabled = true; // Button sperren, bis verifiziert ist
+            // Button kurz sperren, damit niemand klickt, bevor Supabase das OK gibt
+            submitBtn.disabled = true; 
 
-            // 2. Token bei Supabase einlösen (Das startet die Session!)
             const { data, error } = await supabaseClient.auth.verifyOtp({
                 token_hash: tokenHash,
                 type: 'recovery'
             });
 
             if (error) {
+                // Nur im Fehlerfall eine Nachricht zeigen
                 message.className = "message";
                 message.textContent = "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.";
             } else {
-                message.className = "message success";
-                message.textContent = "Link gültig! Du kannst jetzt ein neues Passwort vergeben.";
-                submitBtn.disabled = false; // Button freigeben
+                // Bei Erfolg: Einfach den Button freigeben und KEINE Nachricht anzeigen
+                submitBtn.disabled = false; 
             }
         } else {
-            // Fallback: Falls jemand den alten Link aufruft (mit #error=...)
+            // Fallback für alte/verbrauchte Links (z. B. durch GMX-Scanner)
             const hash = window.location.hash;
             if (hash && hash.includes('error=access_denied')) {
                 message.className = "message";
-                message.textContent = "Dieser Link wurde bereits verbraucht (evtl. durch dein E-Mail-Programm). Bitte fordere einen neuen an.";
+                message.textContent = "Dieser Link wurde bereits verbraucht. Bitte fordere einen neuen an.";
                 submitBtn.disabled = true;
             }
         }
     });
-    // --- ENDE NEU ---
 
     // Toggle Password visibility
     document.querySelectorAll('.toggle-password').forEach(button => {
@@ -343,7 +339,6 @@
         message.textContent = "Passwort wird gespeichert...";
         submitBtn.disabled = true;
 
-        // Passwort bei Supabase aktualisieren (funktioniert jetzt, da verifyOtp() oben erfolgreich war)
         const { data, error } = await supabaseClient.auth.updateUser({
             password: newPassword
         });
@@ -356,9 +351,6 @@
             message.className = "message success";
             message.textContent = "Passwort wurde erfolgreich gespeichert! Du kannst dich nun in der App anmelden.";
             form.reset();
-            
-            // Optional: Nach 3 Sekunden zurück zur App weiterleiten
-            // setTimeout(() => { window.location.href = "keepit://login"; }, 3000);
         }
     });
 </script>
