@@ -251,10 +251,10 @@
         <p class="copyright">&copy; 2026 KeepIt</p>
     </footer>
     
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
     const SUPABASE_URL = 'https://houranifbvtauvmuzuyp.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_phnLqmraWaWyi47QQbSk7Q_FTW0EA3F';
+    const SUPABASE_ANON_KEY = 'sb_publishable_phnLqmraWaWyi47QQbSk7Q_FTW0EA3F'; // Hinweis: Anon Keys sind öffentlich, das ist okay.
     
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -262,8 +262,47 @@
     const newPasswordInput = document.getElementById("new-password");
     const confirmPasswordInput = document.getElementById("confirm-password");
     const message = document.getElementById("form-message");
+    const submitBtn = form.querySelector('.button');
 
-    // Toggle Password visibility (bleibt gleich wie vorher)
+    // --- NEU: Token beim Laden der Seite überprüfen ---
+    window.addEventListener('DOMContentLoaded', async () => {
+        // 1. Parameter aus der URL auslesen (z.B. ?token_hash=abc&type=recovery)
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenHash = urlParams.get('token_hash');
+        const type = urlParams.get('type');
+
+        if (tokenHash && type === 'recovery') {
+            message.className = "message";
+            message.textContent = "Link wird verifiziert...";
+            submitBtn.disabled = true; // Button sperren, bis verifiziert ist
+
+            // 2. Token bei Supabase einlösen (Das startet die Session!)
+            const { data, error } = await supabaseClient.auth.verifyOtp({
+                token_hash: tokenHash,
+                type: 'recovery'
+            });
+
+            if (error) {
+                message.className = "message";
+                message.textContent = "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.";
+            } else {
+                message.className = "message success";
+                message.textContent = "Link gültig! Du kannst jetzt ein neues Passwort vergeben.";
+                submitBtn.disabled = false; // Button freigeben
+            }
+        } else {
+            // Fallback: Falls jemand den alten Link aufruft (mit #error=...)
+            const hash = window.location.hash;
+            if (hash && hash.includes('error=access_denied')) {
+                message.className = "message";
+                message.textContent = "Dieser Link wurde bereits verbraucht (evtl. durch dein E-Mail-Programm). Bitte fordere einen neuen an.";
+                submitBtn.disabled = true;
+            }
+        }
+    });
+    // --- ENDE NEU ---
+
+    // Toggle Password visibility
     document.querySelectorAll('.toggle-password').forEach(button => {
         button.addEventListener('click', function() {
             const targetId = this.getAttribute('data-target');
@@ -281,7 +320,7 @@
         });
     });
 
-    // 2. Formular-Absenden anpassen (muss "async" sein)
+    // Formular-Absenden
     form.addEventListener("submit", async function (event) {
         event.preventDefault();
 
@@ -300,23 +339,26 @@
             return;
         }
 
-        // Lade-Nachricht anzeigen
         message.className = "message";
         message.textContent = "Passwort wird gespeichert...";
+        submitBtn.disabled = true;
 
-        // 3. API-Call an Supabase senden
+        // Passwort bei Supabase aktualisieren (funktioniert jetzt, da verifyOtp() oben erfolgreich war)
         const { data, error } = await supabaseClient.auth.updateUser({
             password: newPassword
         });
 
-        // 4. Antwort von Supabase auswerten
         if (error) {
             message.className = "message";
             message.textContent = "Fehler beim Speichern: " + error.message;
+            submitBtn.disabled = false;
         } else {
             message.className = "message success";
             message.textContent = "Passwort wurde erfolgreich gespeichert! Du kannst dich nun in der App anmelden.";
             form.reset();
+            
+            // Optional: Nach 3 Sekunden zurück zur App weiterleiten
+            // setTimeout(() => { window.location.href = "keepit://login"; }, 3000);
         }
     });
 </script>
