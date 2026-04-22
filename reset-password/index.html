@@ -250,55 +250,110 @@
         </nav>
         <p class="copyright">&copy; 2026 Keeply</p>
     </footer>
+    
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    const SUPABASE_URL = 'https://houranifbvtauvmuzuyp.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_phnLqmraWaWyi47QQbSk7Q_FTW0EA3F';
+    
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    <script>
-        const form = document.getElementById("reset-form");
-        const newPasswordInput = document.getElementById("new-password");
-        const confirmPasswordInput = document.getElementById("confirm-password");
-        const message = document.getElementById("form-message");
+    const form = document.getElementById("reset-form");
+    const newPasswordInput = document.getElementById("new-password");
+    const confirmPasswordInput = document.getElementById("confirm-password");
+    const message = document.getElementById("form-message");
+    const submitBtn = form.querySelector('.button');
 
-        // Toggle Password visibility
-        document.querySelectorAll('.toggle-password').forEach(button => {
-            button.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-target');
-                const input = document.getElementById(targetId);
-                const isPassword = input.getAttribute('type') === 'password';
+    // --- Token beim Laden still im Hintergrund überprüfen ---
+    window.addEventListener('DOMContentLoaded', async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenHash = urlParams.get('token_hash');
+        const type = urlParams.get('type');
 
-                input.setAttribute('type', isPassword ? 'text' : 'password');
-                this.setAttribute('aria-label', isPassword ? 'Passwort verbergen' : 'Passwort anzeigen');
+        if (tokenHash && type === 'recovery') {
+            // Button kurz sperren, damit niemand klickt, bevor Supabase das OK gibt
+            submitBtn.disabled = true; 
 
-                // Toggle SVG (Eye to Eye-off)
-                if (isPassword) {
-                    this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
-                } else {
-                    this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
-                }
+            const { data, error } = await supabaseClient.auth.verifyOtp({
+                token_hash: tokenHash,
+                type: 'recovery'
             });
+
+            if (error) {
+                // Nur im Fehlerfall eine Nachricht zeigen
+                message.className = "message";
+                message.textContent = "Der Link ist ungültig oder abgelaufen. Bitte fordere einen neuen an.";
+            } else {
+                // Bei Erfolg: Einfach den Button freigeben und KEINE Nachricht anzeigen
+                submitBtn.disabled = false; 
+            }
+        } else {
+            // Fallback für alte/verbrauchte Links (z. B. durch GMX-Scanner)
+            const hash = window.location.hash;
+            if (hash && hash.includes('error=access_denied')) {
+                message.className = "message";
+                message.textContent = "Dieser Link wurde bereits verbraucht. Bitte fordere einen neuen an.";
+                submitBtn.disabled = true;
+            }
+        }
+    });
+
+    // Toggle Password visibility
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const isPassword = input.getAttribute('type') === 'password';
+
+            input.setAttribute('type', isPassword ? 'text' : 'password');
+            this.setAttribute('aria-label', isPassword ? 'Passwort verbergen' : 'Passwort anzeigen');
+
+            if (isPassword) {
+                this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+            } else {
+                this.innerHTML = '<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+            }
+        });
+    });
+
+    // Formular-Absenden
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const newPassword = newPasswordInput.value.trim();
+        const confirmPassword = confirmPasswordInput.value.trim();
+
+        if (!newPassword || !confirmPassword) {
+            message.className = "message";
+            message.textContent = "Bitte beide Felder ausfüllen.";
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            message.className = "message";
+            message.textContent = "Die Passwörter stimmen nicht überein.";
+            return;
+        }
+
+        message.className = "message";
+        message.textContent = "Passwort wird gespeichert...";
+        submitBtn.disabled = true;
+
+        const { data, error } = await supabaseClient.auth.updateUser({
+            password: newPassword
         });
 
-        form.addEventListener("submit", function (event) {
-            event.preventDefault();
-
-            const newPassword = newPasswordInput.value.trim();
-            const confirmPassword = confirmPasswordInput.value.trim();
-
-            if (!newPassword || !confirmPassword) {
-                message.className = "message";
-                message.textContent = "Bitte beide Felder ausfuellen.";
-                return;
-            }
-
-            if (newPassword !== confirmPassword) {
-                message.className = "message";
-                message.textContent = "Die Passwoerter stimmen nicht ueberein.";
-                return;
-            }
-
+        if (error) {
+            message.className = "message";
+            message.textContent = "Fehler beim Speichern: " + error.message;
+            submitBtn.disabled = false;
+        } else {
             message.className = "message success";
-            message.textContent = "Passwort wurde erfolgreich gespeichert.";
+            message.textContent = "Passwort wurde erfolgreich gespeichert! Du kannst dich nun in der App anmelden.";
             form.reset();
-        });
-    </script>
+        }
+    });
+</script>
 </body>
 </html>
 
