@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warteliste | Orte speichern, einfach durch ein Foto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Cloudflare Turnstile Script -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #ffffff;
+            color: #000000;
+        }
+        .gradient-text {
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-image: linear-gradient(90deg, #111, #666);
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-fade-in-up {
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-500 { animation-delay: 500ms; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-gray-200 relative">
+
+    <!-- Navbar -->
+    <nav class="w-full p-6 sm:p-8 flex items-center justify-center sm:justify-start z-50 animate-fade-in-up lg:absolute lg:top-0 lg:left-0 lg:px-10">
+        <div class="flex items-center gap-2">
+            <img src="../assets/logo_black.svg" alt="keeply Logo" class="h-8 w-auto">
+            <span class="text-xl tracking-tight">Keeply</span>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col lg:flex-row items-center justify-center max-w-7xl mx-auto w-full px-6 sm:px-12 py-8 lg:py-0 gap-10 sm:gap-12 lg:gap-24">
+
+        <!-- Left Side: Text and Form -->
+        <div class="flex-1 text-center lg:text-left space-y-6 lg:space-y-8 w-full">
+            <div class="space-y-4 lg:space-y-6">
+                <h1 class="text-[2.25rem] leading-[1.15] sm:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight gradient-text animate-fade-in-up delay-100">
+                    Speichere deine Lieblings<wbr>orte mit nur einem Foto.
+                </h1>
+                <p class="text-[1.05rem] sm:text-lg lg:text-xl xl:text-2xl text-gray-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed animate-fade-in-up delay-200">
+                    Ein süßes Café oder das neue Pilates Studio? Du machst ein Foto, wir speichern den genauen Ort für dich. Trage dich ein und sei als Erste dabei.
+                </p>
+            </div>
+
+            <div class="max-w-md mx-auto lg:mx-0 animate-fade-in-up delay-300">
+                <form id="waitlist-form" class="flex flex-col sm:flex-row gap-3" action="https://cf737bfb.sibforms.com/serve/MUIFAEcOY4S4lDfsUu2p4A5qjpGbPEQwdU2FFwsvchWf6wDf_Eo3aHz__vgav6wCTvgnDl_gK3z3x-YNOG-IGY3cbetQR2VMuu9B7g6tv1KUiD1j5azYminQPPH-fJpXQSYX0VAmXSIKzNB1h0WEAirduPHcv6JqfMYQz0XZCniA5W-dLivvbVaKaFharVUp3YQgI_3kE6ppsv0GCQ==" method="POST" target="hidden_iframe" onsubmit="return submitWaitlist(event)">
+                    <input type="text" name="email_address_check" value="" style="display:none;" tabindex="-1">
+                    <input type="hidden" name="locale" value="de">
+                    <!-- Wichtig: Brevo erwartet oft das Feld "EMAIL" (Großschreibung) in deren Formularen -->
+                    <input
+                        type="email"
+                        name="EMAIL"
+                        required
+                        aria-label="E-Mail Adresse"
+                        placeholder="name@beispiel.com"
+                        class="flex-1 w-full px-5 py-4 rounded-xl bg-gray-50 border border-gray-200 text-black placeholder-gray-500 text-base focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all shadow-sm"
+                    >
+                    <button
+                        type="submit"
+                        class="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#608aad] text-white font-semibold hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 transition-all disabled:opacity-50"
+                        id="submit-button"
+                    >
+                        Auf die Warteliste
+                    </button>
+                </form>
+
+                <!-- Turnstile Widget Placement (requires a Site Key) -->
+                <div class="mt-4 flex justify-center lg:justify-start">
+                    <div class="cf-turnstile" data-sitekey="0x4AAAAAADEfJqWJePhlOOHb" data-callback="onTurnstileSuccess"></div>
+                </div>
+
+                <p class="mt-4 text-xs text-gray-500 leading-relaxed px-2 lg:px-0">
+                    *Durch den Klick auf den Button meldest du dich für die Warteliste an. Du kannst dich jederzeit mit einem Klick wieder abmelden. Weitere Infos findest du in der <a href="https://getkeepit.app/datenschutz/" class="underline hover:text-gray-700">Datenschutzerklärung</a>.
+                </p>
+            </div>
+        </div>
+
+        <!-- Right Side: App Mockup -->
+        <div class="flex-1 flex justify-center lg:justify-end w-full animate-fade-in-up delay-500 pb-8 lg:py-0">
+            <div class="relative w-[75%] max-w-[260px] sm:max-w-[280px] lg:max-w-[300px] xl:max-w-[320px] aspect-[9/19.5] bg-white border-[8px] lg:border-[10px] border-black rounded-[2.8rem] lg:rounded-[3.2rem] shadow-2xl flex flex-col items-center justify-center overflow-hidden transform lg:-rotate-2 hover:rotate-0 transition-transform duration-500">
+
+                <!-- App Content / Image without cropping, just precisely positioned -->
+                <div class="absolute inset-0 w-full h-full">
+                    <img src="../assets/mock.png" alt="Keeply App Preview" class="w-full h-full object-fill object-top absolute inset-0">
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-6 px-4 flex flex-wrap justify-center gap-x-6 gap-y-3 text-xs lg:text-sm text-gray-400 animate-fade-in-up delay-500 mt-auto lg:absolute lg:bottom-0">
+        <a href="https://getkeepit.app/impressum/" class="hover:text-gray-800 transition-colors">Impressum</a>
+        <a href="https://getkeepit.app/datenschutz/" class="hover:text-gray-800 transition-colors">Datenschutz</a>
+        <a href="https://getkeepit.app/nutzungsbedingungen/" class="hover:text-gray-800 transition-colors">Nutzungsbedingungen</a>
+    </footer>
+
+    <!-- Unsichtbares iFrame, das verhindert, dass die Nutzer nach dem Absenden auf die hässliche Brevo-Standard-Seite weitergeleitet werden -->
+    <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;" title="Form Submission Output" onload="if(window.submitted){ document.getElementById('waitlist-form').innerHTML = '<p class=\'text-green-600 font-medium text-lg w-full text-center lg:text-left p-3 animate-fade-in-up\'>Yay! 🎉 Du bist auf der Liste.</p>'; document.querySelector('.cf-turnstile').style.display = 'none'; }"></iframe>
+
+    <script>
+        let submitted = false;
+        let isHuman = false;
+
+        function onTurnstileSuccess(token) {
+            isHuman = true;
+            // You can also place the token in a hidden input if you validate server-side via backend
+        }
+
+        function submitWaitlist(e) {
+            if (!isHuman) {
+                if (e) {
+                    e.preventDefault();
+                }
+                alert("Bitte bestätige zuerst, dass du ein Mensch bist (Turnstile Widget).");
+                return false;
+            }
+
+            window.submitted = true;
+            const button = document.getElementById('submit-button');
+            if (button) {
+                button.disabled = true;
+                button.innerText = "Einen Moment...";
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
+
