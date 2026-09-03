@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "U6QK9M76U3.location-saver-app",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
